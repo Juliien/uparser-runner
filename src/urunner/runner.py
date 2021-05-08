@@ -1,4 +1,4 @@
-from user_code.uparser import run
+from src.user_code.uparser import run
 import datetime
 import logging
 import sys
@@ -18,8 +18,6 @@ class Urunner:
         self.run_time = self.end_time - self.start_time
         logging.info("test tun time: {}".format(self.run_time))
 
-    def check_parser_syntax(self):
+    @staticmethod
+    def check_parser_syntax():
         print("running uparser: {}".format(run()))
-
-
-test = Urunner()
