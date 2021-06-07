@@ -1,0 +1,2 @@
+TODO Tester le filesize des fichiers produits (efficacité de compression), la complexité (si on y arrive), le runtime,
+TODO le poids du code envoyé

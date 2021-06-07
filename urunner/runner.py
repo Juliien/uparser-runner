@@ -3,25 +3,25 @@ import time
 import datetime
 import logging
 import sys
-import json
+import os
+import shutil
 
 from kafka import KafkaConsumer
 from .tools import decode, encode, consume
 
-# ENV Values
-RESSOURCES_DIR = "ressources/"
-GENERATED_BY_USER_DIR = RESSOURCES_DIR + "generated_by_user/"
-DESTINATION_PATHNAME_FORMAT = GENERATED_BY_USER_DIR + "{}"
-MOCK_DIR = RESSOURCES_DIR + "mock_parsing_data/"
-MOCK_JSON = "MOCK_DATA.json"
-DESTINATION_NAME = ""
+
+class Singleton(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
 
 
-class Urunner:
+class Urunner(metaclass=Singleton):
     def __init__(self):
         # settings internals values
-        self.dest_name = ""
-        self.source_name = ""
         self.start_time = datetime.datetime.utcnow()
 
         # init logs
@@ -39,7 +39,7 @@ class Urunner:
         # KafkaConsumer(consumer_timeout_ms=1000)
         # for message in self.consumer:
         #     print(message)
-        #
+        #     self.run(etc)
 
     def __del__(self):
         self.end_time = datetime.datetime.utcnow()
@@ -48,6 +48,7 @@ class Urunner:
         self.run_time = self.end_time - self.start_time
         logging.info("test tun time: {}".format(self.run_time))
 
+    # Mock func
     def idle(self):
         last_data = consume()
         if last_data:
@@ -56,21 +57,60 @@ class Urunner:
         else:
             time.sleep(1)
 
+    # Main function
     def run(self, id, src, dest, inputfile, algorithm, language):
         logging.info("test started: {}".format(datetime.datetime.utcnow()))
-        results = self.run_docker(id, src, dest, inputfile, algorithm, language)
-        self.produce_results_for_kafka(results)
+        try:
+            os.mkdir("./{}".format(id))
+        except Exception as e:
+            print("[ERROR] CREATING TMP FOLDER FAILED, DOCKER WONT ACCESS FILES!!! StackTrace: {}".format(e))
 
-    def run_docker(self, id, src, dest, inputfile, algorithm, language):
-        code_extension = 'py'
+        os.chdir("./{}".format(id))
+        self.create_files(src, inputfile, algorithm, language)
+        os.chdir("..")
+        results = self.run_docker(id, src, language)
+        if not results:
+            print("ERROR TO HANDLE")
+        self.clean_host_files(id)
+        self.produce(results)
+
+    @staticmethod
+    def run_docker(id, src, language):  # TODO adapt test_run.sh to docker.py lib
+        run_cmd = ""
+        if language == "python":
+            run_cmd = [language, "code.py", "in.{}".format(src)]
+        elif language == "c":
+            run_cmd = ["./a.out"]
         client = docker.client.from_env()
-        # run_cmd = "echo {} >> in.{};".format(decode(inputfile).decode('utf-8'), src)
-        # run_cmd += "echo {} >> code.{};".format(decode(algorithm).decode('utf-8'), code_extension)
-        # run_cmd += "{} code.{} in.{}".format(language, code_extension, src)
-        test_run = client.containers.run("uparser-runner_runner-uwsgi", run_cmd, detach=True, stdout=True)
-        print(test_run)
-        return test_run
+        if run_cmd:
+            test_run = client.containers.run("urunner:python3.8", run_cmd, detach=True, stdout=True)
+            return test_run
+        return None
 
-    def produce_results_for_kafka(self, results):
+    @staticmethod
+    def clean_host_files(id):
+        try:
+            shutil.rmtree('./{}'.format(id), ignore_errors=False)
+        except Exception as e:
+            print(e)
+
+    @staticmethod
+    def create_files(src, inputfile, algorithm, language):
+        # creating input file with right extension
+        with open("in.{}".format(src), "w+") as data_to_parse:
+            data_to_parse.write(decode(inputfile).decode('utf-8'))
+
+        # creating code files
+        if language == "python":
+            with open("code.py", "w+") as code_to_run:
+                code_to_run.write(decode(algorithm).decode('utf-8'))
+
+    @staticmethod
+    def produce(results):
         print(results)
-        pass
+        # TODO produce to kafka topic
+
+
+# TODO Une image par techno ? avec urunner:python par exemple, comment faire pour le ENTRYPOINT alors ?
+# TODO ? Build l'image au moment du run ?
+

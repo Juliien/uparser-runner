@@ -15,6 +15,7 @@ def create_dest_name_from_source(self, source_filename: str, extension: str):
         raise Exception
     self.dest_name = file_name + extension
 
+
 def decode(todecode):
     return base64.b64decode(todecode)
 
