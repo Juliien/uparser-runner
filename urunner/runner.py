@@ -5,6 +5,7 @@ import sys
 import os
 import shutil
 import logging
+import threading
 
 from pprint import pprint
 
@@ -26,7 +27,8 @@ class Urunner(metaclass=Singleton):
         self.start_time = datetime.datetime.utcnow()
 
         # init logs
-        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+        logging_format = "%(asctime)s: %(message)s"
+        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format=logging_format, datefmt="%H:%M:%S")
 
         # kafka
         # backend_queue = KafkaWrapper()
@@ -128,8 +130,17 @@ class Urunner(metaclass=Singleton):
     def test_run_python(self):
         last_data = kafka_mock()
         if last_data:
-            self.run(last_data['id'], last_data['from'], last_data['to'],
-                     last_data['inputfile'], last_data['algorithm'], last_data['language'])
+            thread_function = self.run
+            arguments = [last_data['id'], last_data['from'], last_data['to'],
+                         last_data['inputfile'], last_data['algorithm'], last_data['language']]
+
+            logging.info("Main    : before creating thread")
+            x = threading.Thread(target=thread_function, args=arguments)
+            logging.info("Main    : before running thread")
+            x.start()
+            logging.info("Main    : wait for the thread to finish")
+            # x.join()
+            logging.info("Main    : all done")
         else:
             time.sleep(1)
 
