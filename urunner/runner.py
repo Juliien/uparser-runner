@@ -45,7 +45,7 @@ class Urunner(metaclass=Singleton):
         try:
             os.mkdir("./{}".format(run_id))
         except Exception as e:
-            print("[ERROR] CREATING TMP FOLDER FAILED, DOCKER WONT ACCESS FILES!!! StackTrace: {}".format(e))
+            logging.error("[ERROR] CREATING TMP FOLDER FAILED, DOCKER WONT ACCESS FILES!!! StackTrace: {}".format(e))
         # getting into this folder
         os.chdir("./{}".format(run_id))
 
@@ -91,7 +91,7 @@ class Urunner(metaclass=Singleton):
 
         self.clean_host_files(run_id=run_id)  # delete the run_id folder at the end of run
 
-        print(response_for_backend)
+        logging.info(response_for_backend)
         logging.info("DOCKER ENDED")
         return {'lol': 'lel'}
 
@@ -101,7 +101,7 @@ class Urunner(metaclass=Singleton):
         try:
             shutil.rmtree('./{}'.format(run_id), ignore_errors=False)
         except Exception as e:
-            print(e)
+            logging.error("clean_host_files: " + e)
 
     @staticmethod
     def create_files(src, inputfile, algorithm, language):
