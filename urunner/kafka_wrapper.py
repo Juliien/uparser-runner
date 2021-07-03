@@ -2,12 +2,7 @@ import json
 import logging
 
 from kafka import KafkaConsumer, KafkaProducer
-
-INPUT_TOPIC = "uparser-input"
-OUTPUT_TOPIC = "uparser-output"
-
-server = "localhost:9092"
-group_id = "uparser"
+from urunner.config.kafka_config import cfg
 
 
 class KafkaWrapper:
@@ -20,13 +15,11 @@ class KafkaWrapper:
     @staticmethod
     def setup_kafka_consumer():
         logging.info("kafka consumer setup start")
-        consumer = KafkaConsumer(INPUT_TOPIC, bootstrap_servers=[server], auto_offset_reset='earliest',
-                                 enable_auto_commit=True, group_id=group_id,
+        config = cfg['input']
+        consumer = KafkaConsumer(config['topic'], bootstrap_servers=[config['server']], group_id=0,
                                  value_deserializer=lambda x: json.loads(x.decode('utf-8')))
 
-        KafkaConsumer(auto_offset_reset='earliest', enable_auto_commit=False)
-        KafkaConsumer(value_deserialize=lambda m: json.loads(m.decode('ascii')))
-        KafkaConsumer(consumer_timeout_ms=1000)
+        # KafkaConsumer(consumer_timeout_ms=1000)
         logging.info("kafka consumer setup end")
         return consumer
 
