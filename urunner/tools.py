@@ -34,7 +34,7 @@ def kafka_mock():
                             'algorithm': tmp_algo, 'language': 'python'}
 
     test = [test_hello_world, test_file_generation]
-    return test[1]
+    return test[0]
 
 # print(os.getcwd())
 #
