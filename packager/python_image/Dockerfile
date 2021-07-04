@@ -9,5 +9,5 @@ RUN python3 -m pip install -r requirements.txt
 # RUN EXPORT="PYTHONPATH:=/code"
 
 # redirect stdout and stderr to files
-RUN exec >/code/stdout.log
-RUN exec 2>/code/stderr.log
+# RUN exec >/code/stdout.log
+# RUN exec 2>/code/stderr.log
