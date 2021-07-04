@@ -20,7 +20,7 @@ class KafkaWrapper:
         logging.info("kafka consumer setup start")
         config = cfg['input']
         consumer = KafkaConsumer(config['topic'], bootstrap_servers=[config['server']], auto_offset_reset='earliest',
-                                 value_deserializer=lambda x: json.loads(x.decode('utf-8')))
+                                 value_deserializer=lambda x: json.loads(x.decode('utf-8')), group_id='urunner-0')
         KafkaConsumer(consumer_timeout_ms=1000)
         logging.info("kafka consumer setup end")
         self.consumer = consumer

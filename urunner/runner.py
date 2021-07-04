@@ -24,7 +24,14 @@ class Urunner(metaclass=Singleton):
         self.kafka_wrapper = KafkaWrapper()
 
         # init logs
+
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+        root = logging.getLogger()
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        root.addHandler(handler)
 
         # listening kafka input
         for k in self.kafka_wrapper.consumer:
