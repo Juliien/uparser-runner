@@ -1,14 +1,12 @@
 import docker
 import time
-import datetime
 import sys
 import os
 import shutil
 import logging
 import threading
 
-from pprint import pprint
-
+from kafka_wrapper import KafkaWrapper
 from tools import decode, encode, kafka_mock
 
 
@@ -23,31 +21,41 @@ class Singleton(type):
 
 class Urunner(metaclass=Singleton):
     def __init__(self):
-        # settings internals values
-        self.start_time = datetime.datetime.utcnow()
+        # settings kafka wrapper
+        self.kafka_wrapper = KafkaWrapper()
 
         # init logs
-        logging_format = "%(asctime)s: %(message)s"
-        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format=logging_format, datefmt="%H:%M:%S")
+        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+        root = logging.getLogger()
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        root.addHandler(handler)
 
-        # kafka
-        # backend_queue = KafkaWrapper()
+        # listening kafka input
+        for k in self.kafka_wrapper.consumer:
+            logging.info("adding values: {}".format(k.value))
+            self.run(run_id=k.value['id'], src=k.value['from'], dest=k.value['to'], inputfile=k.value['inputfile'],
+                     algorithm=k.value['algorithm'], language=k.value['language'])
+            time.sleep(2)
 
     def __del__(self):
-        self.end_time = datetime.datetime.utcnow()
-        logging.info("test ended: {}".format(datetime.datetime.utcnow()))
-
-        self.run_time = self.end_time - self.start_time
-        logging.info("test tun time: {}".format(self.run_time))
+        pass
+        # self.end_time = datetime.datetime.utcnow()
+        # logging.info("test ended: {}".format(datetime.datetime.utcnow()))
+        #
+        # self.run_time = self.end_time - self.start_time
+        # logging.info("test tun time: {}".format(self.run_time))
 
     # Main function
     def run(self, run_id, src, dest, inputfile, algorithm, language):
-        # TODO parameters are retrieved on kafka event
         # creating a folder with the id of the run
         try:
             os.mkdir("./{}".format(run_id))
         except Exception as e:
-            print("[ERROR] CREATING TMP FOLDER FAILED, DOCKER WONT ACCESS FILES!!! StackTrace: {}".format(e))
+            logging.warning(e)
+
         # getting into this folder
         os.chdir("./{}".format(run_id))
 
@@ -55,47 +63,37 @@ class Urunner(metaclass=Singleton):
         self.create_files(src, inputfile, algorithm, language)
 
         # folder name after run id, we start docker from here
+        logging.info("new docker run into {}".format(os.getcwd()))
 
+        # setting run parameters for docker
         image = 'urunner:python3.8'
         command = 'python3.8 code.py in.json'
-
-        run_parameters = {'image': image,
-                          'command': command}
-
-        logging.info("new docker run into {}".format(os.getcwd()))
+        run_parameters = {'image': image, 'command': command}
 
         # running docker with container Object (can attach)
         client = docker.client.from_env()
-        container = client.containers.run(image=run_parameters['image'],
-                                          command=run_parameters['command'],
-                                          volumes={os.getcwd(): {'bind': '/code/', 'mode': 'rw'}},
-                                          stderr=True, stdout=True, detach=True)
-
+        container = client.containers.run(image=run_parameters['image'], command=run_parameters['command'], stdout=True,
+                                          volumes={os.getcwd(): {'bind': '/code/', 'mode': 'rw'}}, stderr=True, detach=True)
         logging.info("Running a new container ! ID: {}".format(container.id))
-
-        # client.copy(container.id, "requirements.txt")
         container.wait()
+
+        # retrieving stderr and stdout
         out = container.logs(stdout=True, stderr=False)
         err = container.logs(stdout=False, stderr=True)
+        logging.info(type(out))
+        logging.info(type(err))
 
-        with open("out.json", "r") as file:
-            artifact = file.read()
-        response_for_backend = {'stdout': out,
-                                'stderr': err,
-                                'artifact': artifact}
+        try:
+            with open("out.json", "r") as file:
+                artifact = file.read().encode('utf-8')
+        except FileNotFoundError:
+            artifact = "FILE NOT FOUND ERROR"
 
-        # running docker with low level API client (cannot attach)
-        # configured_volumes = client.create_host_config(binds={run_folder: {'bind': '/code/', 'mode': 'rw'}})
-        # container = client.create_container(image='urunner:python3.8', stdin_open=False, tty=False,
-        #                                     command='ls 2> error 1> output', volumes=[run_folder],
-        #                                     host_config=configured_volumes)
-        # client.start(container)  # or client.start(container.get("Id")))
+        response_for_backend = {'stdout': out, 'stderr': err, 'artifact': artifact}
+        logging.info(response_for_backend)
 
         self.clean_host_files(run_id=run_id)  # delete the run_id folder at the end of run
-
-        print(response_for_backend)
-        logging.info("DOCKER ENDED")
-        return {'lol': 'lel'}
+        self.kafka_wrapper.producer.send('runner-output', str(response_for_backend))
 
     @staticmethod
     def clean_host_files(run_id):
@@ -103,7 +101,7 @@ class Urunner(metaclass=Singleton):
         try:
             shutil.rmtree('./{}'.format(run_id), ignore_errors=False)
         except Exception as e:
-            print(e)
+            logging.error("clean_host_files: {}".format(e))
 
     @staticmethod
     def create_files(src, inputfile, algorithm, language):
@@ -115,32 +113,3 @@ class Urunner(metaclass=Singleton):
         if language == "python":
             with open("code.py", "w+") as code_to_run:
                 code_to_run.write(decode(algorithm).decode('utf-8'))
-
-    @staticmethod
-    def produce(results):
-        pass
-        # server = ['localhost;9092']
-        # producer = KafkaProducer(bootstrap_servers=[server], auto_offset_reset='earliest', enable_auto_commit=True,
-        #                          value_serializer=lambda x: json.loads(x.decode('utf-8')))
-        #
-        # producer.send('urunner-ouput', results)
-        # TODO produce to kafka topic
-
-    # testings functions
-    def test_run_python(self):
-        last_data = kafka_mock()
-        if last_data:
-            thread_function = self.run
-            arguments = [last_data['id'], last_data['from'], last_data['to'],
-                         last_data['inputfile'], last_data['algorithm'], last_data['language']]
-
-            logging.info("Main    : before creating thread")
-            x = threading.Thread(target=thread_function, args=arguments)
-            logging.info("Main    : before running thread")
-            x.start()
-            logging.info("Main    : wait for the thread to finish")
-            # x.join()
-            logging.info("Main    : all done")
-        else:
-            time.sleep(1)
-
