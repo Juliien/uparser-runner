@@ -2,11 +2,22 @@ import docker
 import time
 import sys
 import os
+import base64
 import shutil
 import logging
 
+import signal
+import sys
+
 from kafka_wrapper import KafkaWrapper
-from tools import decode, encode, kafka_mock
+
+
+def decode(to_decode):
+    return base64.b64decode(to_decode)
+
+
+def encode(to_encode):
+    return base64.b64encode(to_encode)
 
 
 class Singleton(type):
@@ -19,20 +30,23 @@ class Singleton(type):
 
 
 class Urunner(metaclass=Singleton):
+
     def __init__(self):
         # settings kafka wrapper
         self.kafka_wrapper = KafkaWrapper()
 
+        signal.signal(signal.SIGINT, self.signal_handler)
         # init logs
 
-        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-        root = logging.getLogger()
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        handler.setFormatter(formatter)
-        root.addHandler(handler)
+        logging.basicConfig(filename='runner.log', stream=sys.stdout, filemode='w', level=logging.INFO)
+        # root = logging.getLogger()
+        # handler = logging.StreamHandler(sys.stdout)
+        # handler.setLevel(logging.DEBUG)
+        # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        # handler.setFormatter(formatter)
+        # root.addHandler(handler)
 
+        logging.info('test')
         # listening kafka input
         for k in self.kafka_wrapper.consumer:
             logging.info("adding values: {}".format(k.value))
@@ -41,7 +55,7 @@ class Urunner(metaclass=Singleton):
             time.sleep(2)
 
     def __del__(self):
-        pass
+        print('Thanks for using Urunner ! :D')
         # self.end_time = datetime.datetime.utcnow()
         # logging.info("test ended: {}".format(datetime.datetime.utcnow()))
         #
@@ -67,7 +81,7 @@ class Urunner(metaclass=Singleton):
 
         # setting run parameters for docker
         image = 'urunner:python3.8'
-        command = 'python3.8 code.py in.json'
+        command = 'python3.8 code.py in.{}'.format(src)
         run_parameters = {'image': image, 'command': command}
 
         # running docker with container Object (can attach)
@@ -84,7 +98,7 @@ class Urunner(metaclass=Singleton):
         logging.info(type(err))
 
         try:
-            with open("out.json", "r") as file:
+            with open("out.{}".format(src), "r") as file:
                 artifact = file.read().encode('utf-8')
         except FileNotFoundError:
             artifact = "FILE NOT FOUND ERROR"
@@ -94,6 +108,12 @@ class Urunner(metaclass=Singleton):
 
         self.clean_host_files(run_id=run_id)  # delete the run_id folder at the end of run
         self.kafka_wrapper.producer.send('runner-output', str(response_for_backend))
+
+    def signal_handler(self, sig, frame):
+        logging.info(sig)
+        logging.info(frame)
+        self.kafka_wrapper.consumer.close()
+        sys.exit(0)
 
     @staticmethod
     def clean_host_files(run_id):
