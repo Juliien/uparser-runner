@@ -89,7 +89,7 @@ class Urunner(metaclass=Singleton):
         except FileNotFoundError:
             artifact = "FILE NOT FOUND ERROR"
 
-        response_for_backend = {'stdout': out, 'stderr': err, 'artifact': artifact}
+        response_for_backend = {'run_id': run_id, 'stdout': out, 'stderr': err, 'artifact': artifact}
         logging.info(response_for_backend)
 
         self.clean_host_files(run_id=run_id)  # delete the run_id folder at the end of run
