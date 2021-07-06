@@ -98,7 +98,7 @@ class Urunner(metaclass=Singleton):
         logging.info(type(err))
 
         try:
-            with open("out.{}".format(src), "r") as file:
+            with open("out.{}".format(dest), "r") as file:
                 artifact = file.read().encode('utf-8')
         except FileNotFoundError:
             artifact = "FILE NOT FOUND ERROR"
