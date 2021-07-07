@@ -5,8 +5,9 @@ import os
 import shutil
 import logging
 
-from kafka_wrapper import Consumer
-from tools import decode, encode, kafka_mock
+from urunner.kafka_wrapper import Consumer
+from urunner.run.Run import Run
+from urunner.tools import decode, encode, kafka_mock
 
 
 class Singleton(type):
@@ -36,8 +37,10 @@ class Urunner(metaclass=Singleton):
         # listening kafka input
         for k in self.WrappedConsumer.consumer:
             logging.info("adding values: {}".format(k.value))
-            self.run(run_id=k.value['id'], src=k.value['from'], dest=k.value['to'], inputfile=k.value['inputfile'],
-                     algorithm=k.value['algorithm'], language=k.value['language'])
+
+            self.run = Run(run_id=k.value['id'], src=k.value['from'], dest=k.value['to'], inputfile=k.value['inputfile'],
+                           algorithm=k.value['algorithm'], language=k.value['language'])
+
             time.sleep(2)
 
     def __del__(self):

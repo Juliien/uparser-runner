@@ -6,10 +6,8 @@ import shutil
 from urunner.tools import encode, decode
 from urunner.kafka_wrapper import Producer
 
-VALID_LANGUAGES = { 'python':
-                        {'ext': '.py',
-                         'image': 'urunner:python3.8',
-                         'bin': 'python3'}}
+VALID_LANGUAGES = {'python': {'ext': '.py', 'image': 'urunner:python3.8', 'bin': 'python3'},
+                   } # insert new languages here
 
 
 class Run:
@@ -34,14 +32,18 @@ class Run:
 
     def __init__(self, run_id, src, dest, inputfile, algorithm, language):
         self.run_id = run_id
-
+        print(src, dest, language)
         self.WrappedProducer = Producer()
         # creating run id temporary folder, dive into it and prepare users files according to languages chosen
         self.create_run_folder_and_dive()
         self.setup_extensions(language, src, dest)
         self.prepare_files(in_encoded=inputfile, code_encoded=algorithm)
-
         # folder name after run id, we start docker from here, setting run parameters for docker
+
+        self.setup_docker()
+        self.run_docker()
+        self.retrieve_logs_and_artifact()
+        self.send_response()
         self.clean_host_files()  # delete the run_id folder at the end of run
 
     def __del__(self):
@@ -59,7 +61,7 @@ class Run:
         self.in_ext = in_ext
         self.out_ext = out_ext
 
-        self.code_filename = "code.{}".format(self.code_ext)
+        self.code_filename = "code{}".format(self.code_ext)
         self.in_filename = "in.{}".format(self.in_ext)
         self.out_filename = "out.{}".format(self.out_ext)
 
@@ -77,7 +79,7 @@ class Run:
         if not self.run_id:
             raise Exception("run id is NOT SET")
         try:
-            os.mkdir("./{}".format(self.run_id))
+            os.mkdir(self.run_id)
         except Exception as e:
             logging.error(e)
 
@@ -87,6 +89,7 @@ class Run:
             logging.error(e)
 
         logging.info("new docker run into {}".format(os.getcwd()))
+
     ###
 
     def setup_docker(self):
@@ -97,29 +100,30 @@ class Run:
         self._client = docker.client.from_env()
 
     def run_docker(self):
-        container = self._client.containers.run(image=self._image, command=self._run_cmd,
-                                                volumes={os.getcwd(): {'bind': '/code/', 'mode': 'rw'}},
-                                                stdout=True, stderr=True, detach=True)
+        self._container = self._client.containers.run(image=self._image, command=self._run_cmd,
+                                                      volumes={os.getcwd(): {'bind': '/code/', 'mode': 'rw'}},
+                                                      stdout=True, stderr=True, detach=True)
 
-        logging.info("Running a new container ! ID: {}".format(container.id))
-        container.wait()
-        self._container = container
+        logging.info("Running a new container ! ID: {}".format(self._container.id))
+        self._container.wait()
 
     def retrieve_logs_and_artifact(self):
         # retrieving stderr and stdout
-        out = self._container.logs(stdout=True, stderr=False)
-        err = self._container.logs(stdout=False, stderr=True)
+        out = self._container.logs(stdout=True, stderr=False).decode()
+        err = self._container.logs(stdout=False, stderr=True).decode()
 
         try:
-            with open("out.json", "r") as file:
-                artifact = file.read().encode('utf-8')
+            with open(self.out_filename, "r") as file:
+                artifact = file.read()
         except FileNotFoundError:
             artifact = None
 
-        NEW_KAFKA_MESSAGE = {'run_id': self.run_id, 'stdout': out, 'stderr': err, 'artifact': artifact}
-        logging.debug(NEW_KAFKA_MESSAGE)
+        self.response = {'run_id': self.run_id, 'stdout': out, 'stderr': err, 'artifact': artifact}
+        logging.debug(self.response)
 
-        self.producer.send('runner-output', NEW_KAFKA_MESSAGE)
+    def send_response(self):
+        print(self.response)
+        self.WrappedProducer.producer.send('runner-output', self.response)
 
     ##########
     def clean_host_files(self):
