@@ -99,7 +99,7 @@ class Urunner(metaclass=Singleton):
 
         try:
             with open("out.{}".format(dest), "r") as file:
-                artifact = file.read().encode('utf-8')
+                artifact = file.read()
         except FileNotFoundError:
             artifact = "FILE NOT FOUND ERROR"
 
