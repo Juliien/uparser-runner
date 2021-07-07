@@ -3,6 +3,8 @@ Multithreading
 Speed / file size ratio
 Complexity
 
+TIMEOUT PROTECTION: TODO
+
 Languages:
 Python (DONE)
 C (TODO)
