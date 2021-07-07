@@ -7,7 +7,7 @@ from urunner.tools import encode, decode
 from urunner.kafka_wrapper import Producer
 
 VALID_LANGUAGES = {'python': {'ext': '.py', 'image': 'urunner:python3.8', 'bin': 'python3'},
-                   } # insert new languages here
+                   }  # insert new languages here
 
 
 class Run:
@@ -30,19 +30,21 @@ class Run:
     response = dict()
     error = ""
 
-    def __init__(self, run_id, src, dest, inputfile, algorithm, language):
+    Logger = None
+
+    def __init__(self, run_id, src, dest, inputfile, algorithm, language, logger):
         self.run_id = run_id
-        print(src, dest, language)
+        self.Logger = logger
         self.WrappedProducer = Producer()
-        # creating run id temporary folder, dive into it and prepare users files according to languages chosen
+        # SETUP: creating run id temporary folder, dive into it and prepare users files according to languages chosen
         self.create_run_folder_and_dive()
         self.setup_extensions(language, src, dest)
         self.prepare_files(in_encoded=inputfile, code_encoded=algorithm)
-        # folder name after run id, we start docker from here, setting run parameters for docker
-
+        # DOCKER: setup, create and log
         self.setup_docker()
         self.run_docker()
         self.retrieve_logs_and_artifact()
+        # CLEANING
         self.send_response()
         self.clean_host_files()  # delete the run_id folder at the end of run
 
@@ -50,6 +52,22 @@ class Run:
         pass
 
     ### FILE SETUP ###
+    def create_run_folder_and_dive(self):
+        # creating a folder with the id of the run
+        if not self.run_id:
+            raise Exception("run id is NOT SET")
+        try:
+            os.mkdir(self.run_id)
+        except Exception as e:
+            self.Logger.error(e)
+
+        try:
+            os.chdir(self.run_id)
+        except Exception as e:
+            self.Logger.error(e)
+
+        self.Logger.info("new docker run into {}".format(os.getcwd()))
+
     def setup_extensions(self, language, in_ext, out_ext):
         if language in VALID_LANGUAGES.keys():
             self.code_ext = VALID_LANGUAGES[language]['ext']
@@ -74,24 +92,7 @@ class Run:
         with open(self.code_filename, "w+") as code_file:
             code_file.write(decode(code_encoded).decode('utf-8'))
 
-    def create_run_folder_and_dive(self):
-        # creating a folder with the id of the run
-        if not self.run_id:
-            raise Exception("run id is NOT SET")
-        try:
-            os.mkdir(self.run_id)
-        except Exception as e:
-            logging.error(e)
-
-        try:
-            os.chdir(self.run_id)
-        except Exception as e:
-            logging.error(e)
-
-        logging.info("new docker run into {}".format(os.getcwd()))
-
-    ###
-
+    ### DOCKER SETUP RUN AND RETRIEVING DATA
     def setup_docker(self):
         # run cmd formatting # TODO ERROR HANDLING
         self._run_cmd = "{} {} {}".format(self._bin, self.code_filename, self.in_filename)
@@ -104,7 +105,7 @@ class Run:
                                                       volumes={os.getcwd(): {'bind': '/code/', 'mode': 'rw'}},
                                                       stdout=True, stderr=True, detach=True)
 
-        logging.info("Running a new container ! ID: {}".format(self._container.id))
+        self.Logger.info("Running a new container ! ID: {}".format(self._container.id))
         self._container.wait()
 
     def retrieve_logs_and_artifact(self):
@@ -119,16 +120,15 @@ class Run:
             artifact = None
 
         self.response = {'run_id': self.run_id, 'stdout': out, 'stderr': err, 'artifact': artifact}
-        logging.debug(self.response)
+        self.Logger.debug(self.response)
 
+    ### KAFKA RESPONSE
     def send_response(self):
-        print(self.response)
         self.WrappedProducer.producer.send('runner-output', self.response)
 
-    ##########
     def clean_host_files(self):
         os.chdir("..")
         try:
             shutil.rmtree(self.run_id, ignore_errors=False)
         except Exception as e:
-            logging.error("clean_host_files: {}".format(e))
+            self.Logger.error("clean_host_files: {}".format(e))
