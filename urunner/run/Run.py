@@ -93,8 +93,9 @@ class Run:
 
     def prepare_files(self, in_encoded, code_encoded):
         # creating input file with right extension
-        with open(self.in_ext, "w+") as in_file:
-            in_file.write(decode(in_encoded).decode('utf-8'))
+        if self._input_less:
+            with open(self.in_ext, "w+") as in_file:
+                in_file.write(decode(in_encoded).decode('utf-8'))
 
         # creating code file
         with open(self.code_filename, "w+") as code_file:
