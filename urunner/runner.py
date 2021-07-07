@@ -2,6 +2,7 @@ import docker
 import time
 import sys
 import os
+import base64
 import shutil
 import logging
 import threading
@@ -9,6 +10,10 @@ import threading
 from urunner.kafka_wrapper import Consumer
 from urunner.run.Run import Run
 from urunner.tools import decode, encode, kafka_mock
+import signal
+import sys
+
+from kafka_wrapper import KafkaWrapper
 
 
 class Singleton(type):
@@ -35,7 +40,6 @@ class Urunner(metaclass=Singleton):
 
             self.run = Run(run_id=k.value['id'], src=k.value['from'], dest=k.value['to'], inputfile=k.value['inputfile'],
                            algorithm=k.value['algorithm'], language=k.value['language'], logger=self.Logger)
-
             time.sleep(2)
 
     def parametrize_logging(self):
@@ -54,7 +58,7 @@ class Urunner(metaclass=Singleton):
         self.Logger.addHandler(handler)
 
     def __del__(self):
-        pass
+        print('Thanks for using Urunner ! :D')
         # self.end_time = datetime.datetime.utcnow()
         # logging.info("test ended: {}".format(datetime.datetime.utcnow()))
         #
