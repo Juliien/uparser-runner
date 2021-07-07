@@ -9,6 +9,7 @@ from urunner.kafka_wrapper import Producer
 VALID_LANGUAGES = {'python': {'ext': '.py', 'image': 'urunner:python3.8', 'bin': 'python3'},
                    }  # insert new languages here
 
+DUMMY_OUT_FILE_EXT = ".dummy"
 
 class Run:
     _image = ""
@@ -18,6 +19,8 @@ class Run:
 
     _client = None
     _container = None
+
+    _input_less = False
 
     code_filename = ""
     in_filename = ""
@@ -33,6 +36,11 @@ class Run:
     Logger = None
 
     def __init__(self, run_id, src, dest, inputfile, algorithm, language, logger):
+        if not src:
+            self._input_less = True
+        if not dest:
+            self.out_ext = DUMMY_OUT_FILE_EXT
+
         self.run_id = run_id
         self.Logger = logger
         self.WrappedProducer = Producer()
