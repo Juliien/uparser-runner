@@ -120,8 +120,8 @@ class Run:
 
     def retrieve_logs_and_artifact(self):
         # retrieving stderr and stdout
-        out = self._container.logs(stdout=True, stderr=False).encode()
-        err = self._container.logs(stdout=False, stderr=True).encode()
+        out = self._container.logs(stdout=True, stderr=False).decode()
+        err = self._container.logs(stdout=False, stderr=True).decode()
 
         try:
             with open(self.out_filename, "r") as file:
