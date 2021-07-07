@@ -4,6 +4,7 @@ import sys
 import os
 import shutil
 import logging
+import threading
 
 from urunner.kafka_wrapper import Consumer
 from urunner.run.Run import Run
