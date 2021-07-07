@@ -10,8 +10,14 @@ def kafka_mock():
     test_file_generation = {'id': '666', 'from': 'csv', 'to': 'json', 'inputfile': 'eyAnaGVsbG8nOiAnd29ybGQnfQ==',
                             'algorithm': tmp_algo, 'language': 'python'}
 
-    test = [test_hello_world, test_file_generation]
-    return test[0]
+    test_real = {'id': '2838f3e8-61e7-49a0-84dc-7f2892193ff8',
+                 'inputfile': 'bm9tDQpkYSBjb3J0ZQ0KZHVwb250DQpkdXByZXQNCg==',
+                 'from': 'csv', 'to': 'json',
+                 'algorithm': 'aW1wb3J0IHN5cwppbXBvcnQganNvbgppbXBvcnQgY3N2Cgpqc29uQXJyYXkgPSBbXQp3aXRoIG9wZW4oc3lzLmFyZ3ZbMV0pIGFzIGZpbGU6CiAgICBjc3ZSZWFkZXIgPSBjc3YuRGljdFJlYWRlcihmaWxlKQogICAgZm9yIHJvdyBpbiBjc3ZSZWFkZXI6CiAgICAgICAganNvbkFycmF5LmFwcGVuZChyb3cpCiAKd2l0aCBvcGVuKCJvdXQuanNvbiIsICd3KycsIGVuY29kaW5nPSd1dGYtOCcpIGFzIGpzb25GaWxlOgogICAganNvblN0cmluZyA9IGpzb24uZHVtcHMoanNvbkFycmF5LCBpbmRlbnQ9NCkKICAgIGpzb25GaWxlLndyaXRlKGpzb25TdHJpbmcp',
+                 'language': 'python'}
+
+    test = [test_hello_world, test_file_generation, test_real]
+    return test[2]
 
 
 if __name__ == "__main__":

@@ -38,6 +38,7 @@ class Run:
     def __init__(self, run_id, src, dest, inputfile, algorithm, language, logger):
         if not src:
             self._input_less = True
+
         if not dest:
             self.out_ext = DUMMY_OUT_FILE_EXT
 
@@ -93,8 +94,8 @@ class Run:
 
     def prepare_files(self, in_encoded, code_encoded):
         # creating input file with right extension
-        if self._input_less:
-            with open(self.in_ext, "w+") as in_file:
+        if not self._input_less:
+            with open(self.in_filename, "w+") as in_file:
                 in_file.write(decode(in_encoded).decode('utf-8'))
 
         # creating code file
@@ -119,8 +120,8 @@ class Run:
 
     def retrieve_logs_and_artifact(self):
         # retrieving stderr and stdout
-        out = self._container.logs(stdout=True, stderr=False)
-        err = self._container.logs(stdout=False, stderr=True)
+        out = self._container.logs(stdout=True, stderr=False).encode()
+        err = self._container.logs(stdout=False, stderr=True).encode()
 
         try:
             with open(self.out_filename, "r") as file:
