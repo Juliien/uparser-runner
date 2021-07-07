@@ -9,11 +9,9 @@ import threading
 
 from urunner.kafka_wrapper import Consumer
 from urunner.run.Run import Run
-from urunner.tools import decode, encode, kafka_mock
+from urunner.tools import decode, encode
 import signal
 import sys
-
-from kafka_wrapper import KafkaWrapper
 
 
 class Singleton(type):
