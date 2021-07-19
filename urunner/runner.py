@@ -1,16 +1,8 @@
-import docker
 import time
-import sys
-import os
-import base64
-import shutil
 import logging
-import threading
 
 from urunner.kafka_wrapper import Consumer
 from urunner.run.Run import Run
-from urunner.tools import decode, encode
-import signal
 import sys
 
 
