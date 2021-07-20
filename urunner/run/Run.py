@@ -6,12 +6,16 @@ import shutil
 from urunner.tools import encode, decode
 from urunner.kafka_wrapper import Producer
 
-VALID_LANGUAGES = {'python': {'ext': '.py', 'image': 'urunner:python3.8', 'bin': 'python3'},
-                   }  # insert new languages here
-
-DUMMY_OUT_FILE_EXT = ".dummy"
 
 class Run:
+    VALID_LANGUAGES = {'python': {'ext': '.py', 'image': 'urunner:python3.8', 'bin': 'python3', 'compiled': False},
+                       'c': {'ext': '.c', 'image': 'urunner:c', 'bin': './a.out', 'compiler': 'gcc', 'compiled': True}
+                       # insert new languages here
+                       }
+
+    DUMMY_OUT_FILE_EXT = ".dummy"
+    TMP_RUN_DIR = "./tmp/"
+
     _image = ""
     _command = ""
     _bin = ""
@@ -21,6 +25,8 @@ class Run:
     _container = None
 
     _input_less = False
+
+    language = ""
 
     code_filename = ""
     in_filename = ""
@@ -40,9 +46,10 @@ class Run:
             self._input_less = True
 
         if not dest:
-            self.out_ext = DUMMY_OUT_FILE_EXT
+            self.out_ext = self.DUMMY_OUT_FILE_EXT
 
         self.run_id = run_id
+        self.run_folder = self.TMP_RUN_DIR + self.run_id
         self.Logger = logger
         self.WrappedProducer = Producer()
         # SETUP: creating run id temporary folder, dive into it and prepare users files according to languages chosen
@@ -66,22 +73,23 @@ class Run:
         if not self.run_id:
             raise Exception("run id is NOT SET")
         try:
-            os.mkdir(self.run_id)
+            os.mkdir(self.run_folder)
         except Exception as e:
             self.Logger.error(e)
 
         try:
-            os.chdir(self.run_id)
+            os.chdir(self.run_folder)
         except Exception as e:
             self.Logger.error(e)
 
         self.Logger.info("new docker run into {}".format(os.getcwd()))
 
     def setup_extensions(self, language, in_ext, out_ext):
-        if language in VALID_LANGUAGES.keys():
-            self.code_ext = VALID_LANGUAGES[language]['ext']
-            self._image = VALID_LANGUAGES[language]['image']
-            self._bin = VALID_LANGUAGES[language]['bin']
+        if language in self.VALID_LANGUAGES.keys():
+            self.code_ext = self.VALID_LANGUAGES[language]['ext']
+            self._image = self.VALID_LANGUAGES[language]['image']
+            self._bin = self.VALID_LANGUAGES[language]['bin']
+            self.language = language
         else:
             raise Exception("INVALID CODE EXTENSION")
 
@@ -104,8 +112,12 @@ class Run:
 
     ### DOCKER SETUP RUN AND RETRIEVING DATA
     def setup_docker(self):
-        # run cmd formatting # TODO ERROR HANDLING
-        self._run_cmd = "{} {} {}".format(self._bin, self.code_filename, self.in_filename)
+        # run cmd formatting
+        if not self.VALID_LANGUAGES[self.language]['compiled']:
+            self._run_cmd = "{} {} {}".format(self._bin, self.code_filename, self.in_filename)
+        else:
+            self._run_cmd = "{} {} && {}".format(self.VALID_LANGUAGES[self.language]['compiler'], self.code_filename,
+                                                 self.VALID_LANGUAGES[self.language]['bin'])  # TODO fichier et dest
 
         # running docker with container Object (can attach)
         self._client = docker.client.from_env()
@@ -137,8 +149,8 @@ class Run:
         self.WrappedProducer.producer.send('runner-output', str(self.response))
 
     def clean_host_files(self):
-        os.chdir("..")
+        os.chdir("../..")
         try:
-            shutil.rmtree(self.run_id, ignore_errors=False)
+            shutil.rmtree(self.run_folder, ignore_errors=False)
         except Exception as e:
             self.Logger.error("clean_host_files: {}".format(e))
