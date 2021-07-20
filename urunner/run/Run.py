@@ -148,7 +148,7 @@ class Run:
             artifact = None
 
         out = encode(bytes(out, encoding='utf-8'))
-        err = encode(bytes(err, encoding='utf-0'))
+        err = encode(bytes(err, encoding='utf-8'))
         artifact = encode(bytes(err, encoding='utf-8'))
 
         self.response = {'run_id': self.run_id, 'stdout': encode(out),
