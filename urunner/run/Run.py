@@ -124,7 +124,9 @@ class Run:
         # running docker with container Object (can attach)
         self._client = docker.client.from_env()
 
+
     def build_compiled_image(self):
+        print("compile here !")
         pass
 
     def run_docker(self):
@@ -147,9 +149,9 @@ class Run:
         except FileNotFoundError:
             artifact = None
 
-        out = encode(bytes(out, encoding='utf-8'))
-        err = encode(bytes(err, encoding='utf-8'))
-        artifact = encode(bytes(artifact, encoding='utf-8'))
+        # out = encode(bytes(out, encoding='utf-8'))
+        # err = encode(bytes(err, encoding='utf-8'))
+        # artifact = encode(bytes(artifact, encoding='utf-8'))
 
         self.response = {'run_id': self.run_id, 'stdout': encode(out),
                          'stderr': err, 'artifact': artifact}
