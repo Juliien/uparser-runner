@@ -153,7 +153,7 @@ class Run:
         # err = encode(bytes(err, encoding='utf-8'))
         # artifact = encode(bytes(artifact, encoding='utf-8'))
 
-        self.response = {'run_id': self.run_id, 'stdout': encode(out),
+        self.response = {'run_id': self.run_id, 'stdout': out,
                          'stderr': err, 'artifact': artifact}
 
         self.Logger.debug(self.response)
