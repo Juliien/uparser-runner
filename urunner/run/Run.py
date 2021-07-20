@@ -1,3 +1,6 @@
+import datetime
+import time
+
 import logging
 import os
 import docker
@@ -113,16 +116,19 @@ class Run:
     ### DOCKER SETUP RUN AND RETRIEVING DATA
     def setup_docker(self):
         # run cmd formatting
-        if not self.VALID_LANGUAGES[self.language]['compiled']:
-            self._run_cmd = "{} {} {}".format(self._bin, self.code_filename, self.in_filename)
+        if self.VALID_LANGUAGES[self.language]['compiled']:
+            self.build_compiled_image()
         else:
-            self._run_cmd = "{} {} && {}".format(self.VALID_LANGUAGES[self.language]['compiler'], self.code_filename,
-                                                 self.VALID_LANGUAGES[self.language]['bin'])  # TODO fichier et dest
+            self._run_cmd = "{} {} {}".format(self._bin, self.code_filename, self.in_filename)
 
         # running docker with container Object (can attach)
         self._client = docker.client.from_env()
 
+    def build_compiled_image(self):
+        pass
+
     def run_docker(self):
+        self._start_time = datetime.datetime.utcnow()
         self._container = self._client.containers.run(image=self._image, command=self._run_cmd,
                                                       volumes={os.getcwd(): {'bind': '/code/', 'mode': 'rw'}},
                                                       stdout=True, stderr=True, detach=True)
@@ -141,7 +147,13 @@ class Run:
         except FileNotFoundError:
             artifact = None
 
-        self.response = {'run_id': self.run_id, 'stdout': out, 'stderr': err, 'artifact': artifact}
+        out = encode(bytes(out, encoding='utf-8'))
+        err = encode(bytes(err, encoding='utf-0'))
+        artifact = encode(bytes(err, encoding='utf-8'))
+
+        self.response = {'run_id': self.run_id, 'stdout': encode(out),
+                         'stderr': err, 'artifact': artifact}
+
         self.Logger.debug(self.response)
 
     ### KAFKA RESPONSE

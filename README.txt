@@ -13,7 +13,7 @@ This is a work in progress. (07/2021)
 
 - runner can be run locally for dev testing purpose,
 - deployed to a cloud instance,
-- or it also could be into a docker container # TODO
+- or it also could be into a docker container
 
 to start urunner: python3.8 app.py
 Docker images:
@@ -30,5 +30,9 @@ Runner steps:
         5 runner assert parsed data and send back stdout & stderr to result message # DONE
 3) Produce data into output kafka topic # DONE
 
-flags dockers we should be using # TODO
+flags dockers we should be using later # TODO
 --memory-reservation
+
+TODO Tester le filesize des fichiers produits (efficacité de compression), la complexité (si on y arrive), le runtime,
+TODO le poids du code envoyé
+TODO Build l'image au moment du run > 27/06 j'hésite encore

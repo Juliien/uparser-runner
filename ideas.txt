@@ -1,3 +1,0 @@
-TODO Tester le filesize des fichiers produits (efficacité de compression), la complexité (si on y arrive), le runtime,
-TODO le poids du code envoyé
-TODO Build l'image au moment du run > 27/06 j'hésite encore
