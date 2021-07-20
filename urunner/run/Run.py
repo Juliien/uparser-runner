@@ -160,7 +160,7 @@ class Run:
 
     ### KAFKA RESPONSE
     def send_response(self):
-        self.WrappedProducer.producer.send('runner-output', str(self.response))
+        self.WrappedProducer.producer.send('runner-output', self.response)
 
     def clean_host_files(self):
         os.chdir("../..")
