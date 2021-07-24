@@ -25,32 +25,20 @@ class Urunner(metaclass=Singleton):
         self.WrappedConsumer = Consumer()  # logger=self.Logger)
 
         # listening kafka input
-        for k in self.WrappedConsumer.consumer:
-            self.Logger.info("adding values: {}".format(k.value))
+        try:
+            for k in self.WrappedConsumer.consumer:
+                self.run = Run(run_id=k.value['id'], src=k.value['from'], dest=k.value['to'], inputfile=k.value['inputfile'],
+                               algorithm=k.value['algorithm'], language=k.value['language'])
+                time.sleep(2)
+        except KeyboardInterrupt:
+            logging.warning("Keyboard Interrupt !")
 
-            self.run = Run(run_id=k.value['id'], src=k.value['from'], dest=k.value['to'], inputfile=k.value['inputfile'],
-                           algorithm=k.value['algorithm'], language=k.value['language'], logger=self.Logger)
-            time.sleep(2)
+    @staticmethod
+    def parametrize_logging():
+        log_format = '%(asctime)s : %(levelname)s : %(name)s : %(message)s'
 
-    def parametrize_logging(self):
-        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-
-        self.Logger = logging.getLogger(__name__)
-        self.Logger.info('Urunner Logging Initialization')
-        self.Logger.setLevel(logging.DEBUG)
-
-        formatter = logging.Formatter('%(asctime)s : %(levelname)s : %(name)s : %(message)s')
-        handler = logging.StreamHandler(sys.stdout)
-
-        handler.setLevel(logging.DEBUG)
-        handler.setFormatter(formatter)
-
-        self.Logger.addHandler(handler)
+        logging.basicConfig(datefmt='%m/%d/%Y, %H:%M:%S', level=logging.DEBUG, format=log_format, stream=sys.stdout)
+        logging.info('Urunner Logging Initialization')
 
     def __del__(self):
-        print('Thanks for using Urunner ! :D')
-        # self.end_time = datetime.datetime.utcnow()
-        # logging.info("test ended: {}".format(datetime.datetime.utcnow()))
-        #
-        # self.run_time = self.end_time - self.start_time
-        # logging.info("test tun time: {}".format(self.run_time))
+        logging.info('Thanks for using Urunner ! :D')

@@ -17,7 +17,8 @@ class Run:
                        }
 
     DUMMY_OUT_FILE_EXT = ".dummy"
-    TMP_RUN_DIR = "./tmp/"
+    TMP_RUN_DIR = "/tmp/"
+    base_folder = ""
 
     _image = ""
     _command = ""
@@ -29,6 +30,8 @@ class Run:
 
     _input_less = False
 
+    _start_time = None
+    _end_time = None
     language = ""
 
     code_filename = ""
@@ -44,7 +47,12 @@ class Run:
 
     Logger = None
 
-    def __init__(self, run_id, src, dest, inputfile, algorithm, language, logger):
+    def __init__(self, run_id, src, dest, inputfile, algorithm, language):
+        logging.info("------------------------------------ START RUN ------------------------------------")
+        logging.info("run id: {}, src: {}, dest: {}, lang: {}".format(
+            run_id, src, dest, language))
+
+        # basic configuration
         if not src:
             self._input_less = True
 
@@ -53,8 +61,9 @@ class Run:
 
         self.run_id = run_id
         self.run_folder = self.TMP_RUN_DIR + self.run_id
-        self.Logger = logger
+        logging.info('run folder: {}'.format(self.run_folder))
         self.WrappedProducer = Producer()
+
         # SETUP: creating run id temporary folder, dive into it and prepare users files according to languages chosen
         self.create_run_folder_and_dive()
         self.setup_extensions(language, src, dest)
@@ -68,24 +77,23 @@ class Run:
         self.clean_host_files()  # delete the run_id folder at the end of run
 
     def __del__(self):
-        pass
+        logging.info("------------------------------------- END RUN -------------------------------------")
 
     ### FILE SETUP ###
     def create_run_folder_and_dive(self):
+        self.base_folder = os.getcwd()
         # creating a folder with the id of the run
         if not self.run_id:
             raise Exception("run id is NOT SET")
         try:
             os.mkdir(self.run_folder)
         except Exception as e:
-            self.Logger.error(e)
+            logging.error(e)
 
         try:
             os.chdir(self.run_folder)
         except Exception as e:
-            self.Logger.error(e)
-
-        self.Logger.info("new docker run into {}".format(os.getcwd()))
+            logging.error(e)
 
     def setup_extensions(self, language, in_ext, out_ext):
         if language in self.VALID_LANGUAGES.keys():
@@ -124,7 +132,6 @@ class Run:
         # running docker with container Object (can attach)
         self._client = docker.client.from_env()
 
-
     def build_compiled_image(self):
         print("compile here !")
         pass
@@ -132,11 +139,12 @@ class Run:
     def run_docker(self):
         self._start_time = datetime.datetime.utcnow()
         self._container = self._client.containers.run(image=self._image, command=self._run_cmd,
-                                                      volumes={os.getcwd(): {'bind': '/code/', 'mode': 'rw'}},
+                                                      volumes={self.run_folder: {'bind': '/code/', 'mode': 'rw'}},
                                                       stdout=True, stderr=True, detach=True)
 
-        self.Logger.info("Running a new container ! ID: {}".format(self._container.id))
+        logging.info("Running a new container ! ID: {}".format(self._container.id))
         self._container.wait()
+        self._end_time = datetime.datetime.utcnow()
 
     def retrieve_logs_and_artifact(self):
         # retrieving stderr and stdout
@@ -153,18 +161,21 @@ class Run:
         # err = encode(bytes(err, encoding='utf-8'))
         # artifact = encode(bytes(artifact, encoding='utf-8'))
 
+        stats = {'duration': self._end_time - self._start_time}
         self.response = {'run_id': self.run_id, 'stdout': out,
-                         'stderr': err, 'artifact': artifact}
+                         'stderr': err, 'artifact': artifact, 'stats': str(stats)}
 
-        self.Logger.debug(self.response)
+        # logging.debug(self.response)
 
     ### KAFKA RESPONSE
     def send_response(self):
         self.WrappedProducer.producer.send('runner-output', self.response)
 
     def clean_host_files(self):
-        os.chdir("../..")
+        logging.warning("cleaning files on host machine !")
+        logging.warning(os.listdir(self.run_folder))
+        os.chdir(self.base_folder)
         try:
             shutil.rmtree(self.run_folder, ignore_errors=False)
         except Exception as e:
-            self.Logger.error("clean_host_files: {}".format(e))
+            logging.error("clean_host_files: {}".format(e))

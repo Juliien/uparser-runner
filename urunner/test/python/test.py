@@ -33,3 +33,7 @@ def test_python_e2e(prod):
                  'language': 'python'}
 
     prod.producer.send(INPUT_TOPIC, test_real).get()
+
+
+if __name__ == '__main__':
+    test_python_e2e(prod())
