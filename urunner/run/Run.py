@@ -18,7 +18,7 @@ class Run:
                        }
 
     DUMMY_OUT_FILE_EXT = ".dummy"
-    TMP_RUN_DIR = "/tmp/"
+    TMP_RUN_DIR = "./tmp/"
     base_folder = ""
 
     _image = ""
@@ -187,6 +187,7 @@ class Run:
         logging.warning(os.listdir(self.run_folder))
         os.chdir(self.base_folder)
         try:
-            shutil.rmtree(self.run_folder, ignore_errors=False)
+            shutil.rmtree(self.run_folder, ignore_errors=True)
         except Exception as e:
             logging.error("clean_host_files: {}".format(e))
+
