@@ -61,7 +61,7 @@ class Run:
             self.out_ext = self.DUMMY_OUT_FILE_EXT
 
         self.run_id = run_id
-        self.run_folder = self.TMP_RUN_DIR + self.run_id
+        self.run_folder = self.run_id  # self.TMP_RUN_DIR +
         logging.info('workdir: {} run folder: {}'.format(os.getcwd(), self.run_folder))
         self.WrappedProducer = Producer()
 
