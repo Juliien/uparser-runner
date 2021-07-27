@@ -1,5 +1,5 @@
 import datetime
-import signal
+import multiprocessing
 import sys
 import time
 
@@ -13,9 +13,6 @@ from kafka_wrapper import Producer
 
 
 # TIMEOUT PROTECTION
-def handler(signum, frame):
-    print("Forever is over!")
-    raise Exception("end of time")
 
 
 class Run:
@@ -67,8 +64,6 @@ class Run:
         if not dest:
             self.out_ext = self.DUMMY_OUT_FILE_EXT
 
-        signal.alarm(10)
-        signal.signal(signal.SIGALRM, handler)
         self.run_id = run_id
         self.run_folder = self.run_id  # self.TMP_RUN_DIR +
         logging.info('workdir: {} run folder: {}'.format(os.getcwd(), self.run_folder))
@@ -80,10 +75,14 @@ class Run:
         self.prepare_files(in_encoded=inputfile, code_encoded=algorithm)
         # DOCKER: setup, create and log
         self.setup_docker()
-        try:
-            self.run_docker()
-        except Exception as exc:
-            print(exc)
+        p = multiprocessing.Process(target=self.run_docker())
+        p.start()
+        p.join(10)
+        if p.is_alive():
+            print("running... let's kill it...")
+            p.terminate()
+            p.kill()
+            p.join()
 
         self.retrieve_logs_and_artifact()
         # CLEANING
