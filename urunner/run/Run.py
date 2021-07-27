@@ -62,7 +62,7 @@ class Run:
 
         self.run_id = run_id
         self.run_folder = self.TMP_RUN_DIR + self.run_id
-        logging.info('run folder: {}'.format(self.run_folder))
+        logging.info('workdir: {} run folder: {}'.format(os.getcwd(), self.run_folder))
         self.WrappedProducer = Producer()
 
         # SETUP: creating run id temporary folder, dive into it and prepare users files according to languages chosen
