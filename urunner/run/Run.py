@@ -1,4 +1,5 @@
 import datetime
+import signal
 import sys
 import time
 
@@ -11,11 +12,17 @@ from tools import encode, decode
 from kafka_wrapper import Producer
 
 
+# TIMEOUT PROTECTION
+def handler(signum, frame):
+    print("Forever is over!")
+    raise Exception("end of time")
+
+
 class Run:
     VALID_LANGUAGES = {'python': {'ext': '.py', 'image': 'urunner:python3.8', 'bin': 'python3', 'compiled': False},
                        'c': {'ext': '.c', 'image': 'urunner:c', 'bin': './a.out', 'compiler': 'gcc', 'compiled': True}
                        # insert new languages here
-                       }
+                      }
 
     DUMMY_OUT_FILE_EXT = ".dummy"
     TMP_RUN_DIR = "./tmp/"
@@ -60,6 +67,8 @@ class Run:
         if not dest:
             self.out_ext = self.DUMMY_OUT_FILE_EXT
 
+        signal.alarm(10)
+        signal.signal(signal.SIGALRM, handler)
         self.run_id = run_id
         self.run_folder = self.run_id  # self.TMP_RUN_DIR +
         logging.info('workdir: {} run folder: {}'.format(os.getcwd(), self.run_folder))
@@ -71,7 +80,11 @@ class Run:
         self.prepare_files(in_encoded=inputfile, code_encoded=algorithm)
         # DOCKER: setup, create and log
         self.setup_docker()
-        self.run_docker()
+        try:
+            self.run_docker()
+        except Exception as exc:
+            print(exc)
+
         self.retrieve_logs_and_artifact()
         # CLEANING
         self.clean_host_files()  # delete the run_id folder at the end of run
@@ -198,4 +211,3 @@ class Run:
         logging.info("DELETING HOST MACHINE FILES")
         shutil.rmtree(self.run_folder, ignore_errors=True)
         assert self.run_id not in os.listdir('.'), "Left over folder in URUNNER !!!"
-
