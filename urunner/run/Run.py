@@ -170,7 +170,7 @@ class Run:
 
         in_size, out_size = 0, 0
         code_size = os.stat(self.code_filename).st_size
-        in_size, out_size = None, None
+
         if os.path.exists(self.in_filename):
             in_size = os.stat(self.in_filename).st_size
 
