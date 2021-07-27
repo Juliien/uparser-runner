@@ -168,6 +168,7 @@ class Run:
         # err = encode(bytes(err, encoding='utf-8'))
         # artifact = encode(bytes(artifact, encoding='utf-8'))
 
+        in_size, out_size = 0, 0
         code_size = os.stat(self.code_filename).st_size
         in_size, out_size = None, None
         if os.path.exists(self.in_filename):
@@ -176,11 +177,13 @@ class Run:
         if os.path.exists(self.out_filename):
             out_size = os.stat(self.out_filename).st_size
 
-        stats = {'duration': self._end_time - self._start_time,
+        timedelta = self._end_time - self._start_time
+
+        stats = {'duration': str(timedelta),
                  'code_size': code_size, 'in_size': in_size, 'out_size': out_size}
         logging.info(stats)
         self.response = {'run_id': self.run_id, 'stdout': out,
-                         'stderr': err, 'artifact': artifact, 'stats': str(stats)}
+                         'stderr': err, 'artifact': artifact, 'stats': stats}
         logging.info(self.response)
         os.chdir('..')
 
