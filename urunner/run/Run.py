@@ -49,7 +49,7 @@ class Run:
     Logger = None
 
     def __init__(self, run_id, src, dest, inputfile, algorithm, language):
-        logging.info("------------------------------------ START RUN ------------------------------------")
+        logging.info("------------------------------------ START RUN {} ------------------------------------".format(run_id))
         logging.info("run id: {}, src: {}, dest: {}, lang: {}".format(
             run_id, src, dest, language))
 
@@ -78,7 +78,7 @@ class Run:
         self.send_response()
 
     def __del__(self):
-        logging.info("------------------------------------- END RUN -------------------------------------")
+        logging.info("------------------------------------- END RUN {} -------------------------------------".format(self.run_id))
 
     ### FILE SETUP ###
     def create_run_folder_and_dive(self):
@@ -190,9 +190,9 @@ class Run:
             self.WrappedProducer.producer.send('runner-output', self.response)
         except Exception as e:
             logging.error(e)
+
     def clean_host_files(self):
         logging.info("DELETING HOST MACHINE FILES")
-        logging.info(os.listdir('.'))
         shutil.rmtree(self.run_folder, ignore_errors=True)
-        logging.info(os.listdir('.'))
+        assert self.run_id not in os.listdir('.'), "Left over folder in URUNNER !!!"
 
