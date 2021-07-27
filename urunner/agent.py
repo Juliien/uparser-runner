@@ -1,8 +1,9 @@
+import os
 import time
 import logging
 
-from urunner.kafka_wrapper import Consumer
-from urunner.run.Run import Run
+from kafka_wrapper import Consumer
+from run.Run import Run
 import sys
 
 
@@ -24,6 +25,7 @@ class Urunner(metaclass=Singleton):
         # settings kafka wrapper
         self.WrappedConsumer = Consumer()  # logger=self.Logger)
 
+        os.mkdir("./tmp/")
         # listening kafka input
         try:
             for k in self.WrappedConsumer.consumer:
@@ -37,7 +39,7 @@ class Urunner(metaclass=Singleton):
     def parametrize_logging():
         log_format = '%(asctime)s : %(levelname)s : %(name)s : %(message)s'
 
-        logging.basicConfig(datefmt='%m/%d/%Y, %H:%M:%S', level=logging.DEBUG, format=log_format, stream=sys.stdout)
+        logging.basicConfig(datefmt='%m/%d/%Y, %H:%M:%S', level=logging.DEBUG,   format=log_format, stream=sys.stdout)
         logging.info('Urunner Logging Initialization')
 
     def __del__(self):

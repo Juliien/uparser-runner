@@ -7,8 +7,8 @@ import os
 import docker
 import shutil
 
-from urunner.tools import encode, decode
-from urunner.kafka_wrapper import Producer
+from tools import encode, decode
+from kafka_wrapper import Producer
 
 
 class Run:
