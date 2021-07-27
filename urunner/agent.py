@@ -25,7 +25,8 @@ class Urunner(metaclass=Singleton):
         # settings kafka wrapper
         self.WrappedConsumer = Consumer()  # logger=self.Logger)
 
-        os.mkdir("./tmp/")
+        if not os.path.exists("./tmp/"):
+            os.mkdir("./tmp/")
         # listening kafka input
         try:
             for k in self.WrappedConsumer.consumer:
