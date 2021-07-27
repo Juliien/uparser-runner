@@ -1,23 +1,14 @@
-Easily configurable models for kafka
-Multithreading
-Speed / file size ratio
-Complexity
-
-
-TIMEOUT PROTECTION: TODO
-STATS: DONE
-COMPILED LANGAGE: TODO
-DEPLOYEMENT TODO
-BETTER ERROR HANDLING TODO
-E2E TESTING WITH EXTREME INPUTS TODO
-CLEANING_AGENT TO REMOVE POTENTIALS LEFTOVERS TODO
+MULTITHREADING                                  TODO
+TIMEOUT PROTECTION:                             DONE
+STATS (tmedelte / files sizes)                  DONE
+COMPILED LANGAGE:                               TODO
+DEPLOYEMENT                                     WIP
+BETTER ERROR HANDLING                           WIP
+E2E TESTING WITH EXTREME INPUTS                 WIP
+CLEANING_AGENT TO REMOVE POTENTIALS LEFTOVERS   DONE
 
 Languages:
-Python (DONE)
-C (TODO)
-
-Js (TODO)
-
-Design:
-create a run Object (TODO)
+Python                                          DONE
+C                                               WIP
+Js                                              TODO
 

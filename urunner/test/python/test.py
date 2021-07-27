@@ -26,6 +26,7 @@ def test_python_file(prod):
 
     prod.producer.send(INPUT_TOPIC, test_file_generation).get()
 
+
 @pytest.mark.skip("")
 def test_python_e2e(prod):
     test_real = {'id': '2838f3e8-61e7-49a0-84dc-7f2892193ff8',
@@ -36,7 +37,7 @@ def test_python_e2e(prod):
 
     prod.producer.send(INPUT_TOPIC, test_real).get()
 
-
+@pytest.mark.skip("")
 def test_python_csv(prod):
     test_csv = {"id": "1",
                 "inputfile": "ew0KICAgICJlbWFpbCI6ICJqdWxpZW5AZ21haWwuY29tIiwNCiAgICAicGFzc3dvcmQiOiAidGVzdCIsDQogICAgIm5hbWUiOiAidG90byIsDQogICAgImFtZGluIjogdHJ1ZQ0KfQ==",
@@ -44,3 +45,11 @@ def test_python_csv(prod):
                 "from": "json", "to": "csv", "language": "python"}
 
     prod.producer.send(INPUT_TOPIC, test_csv).get()
+
+
+def test_timeout_protection(prod):
+    test_timeout = {"id": "1", "inputfile": "",
+                    "algorithm": "aW1wb3J0IHRpbWUKCndoaWxlIDE6CiAgICBwcmludCgibG9sIikKICAgIHRpbWUuc2xlZXAoMSkg",
+                    "from": "", "to": "", "language": "python"}
+
+    prod.producer.send(INPUT_TOPIC, test_timeout).get()

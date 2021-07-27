@@ -49,8 +49,7 @@ class Run:
 
     response = dict()
     error = ""
-
-    Logger = None
+    timeout = False
 
     def __init__(self, run_id, src, dest, inputfile, algorithm, language):
         logging.info("------------------------------------ START RUN {} ------------------------------------".format(run_id))
@@ -77,12 +76,13 @@ class Run:
         self.setup_docker()
         p = multiprocessing.Process(target=self.run_docker())
         p.start()
-        p.join(10)
+        p.join(1)
+
         if p.is_alive():
-            print("running... let's kill it...")
+            logging.warning("RUN {} timeout !".format(self.run_id))
             p.terminate()
             p.kill()
-            p.join()
+            self.timeout = True
 
         self.retrieve_logs_and_artifact()
         # CLEANING
@@ -194,8 +194,11 @@ class Run:
         stats = {'duration': str(timedelta),
                  'code_size': code_size, 'in_size': in_size, 'out_size': out_size}
         logging.info(stats)
+
         self.response = {'run_id': self.run_id, 'stdout': out,
                          'stderr': err, 'artifact': artifact, 'stats': stats}
+        if self.timeout:
+            self.response = {'run_id': self.run_id, 'stdout': '', 'stderr': "TIMEOUT", artifact: "", 'stats': {}}
         logging.info(self.response)
         os.chdir('..')
 
