@@ -74,29 +74,26 @@ class Run:
         self.run_docker()
         self.retrieve_logs_and_artifact()
         # CLEANING
-        self.send_response()
         self.clean_host_files()  # delete the run_id folder at the end of run
+        self.send_response()
 
     def __del__(self):
         logging.info("------------------------------------- END RUN -------------------------------------")
 
     ### FILE SETUP ###
     def create_run_folder_and_dive(self):
-        self.base_folder = os.getcwd()
         # creating a folder with the id of the run
         if not self.run_id:
             raise Exception("run id is NOT SET")
-        try:
+        if os.path.exists(self.run_folder):
+            shutil.rmtree(self.run_folder, ignore_errors=True)
+        else:
             os.mkdir(self.run_folder)
-        except Exception as e:
-            logging.error(e)
 
-        try:
-            os.chdir(self.run_folder)
-        except Exception as e:
-            logging.error(e)
-        logging.info(os.listdir('.'))
-        logging.info(os.listdir('..'))
+        # try:
+        #     os.chdir(self.run_folder)
+        # except Exception as e:
+        #     logging.error(e)
 
     def setup_extensions(self, language, in_ext, out_ext):
         if language in self.VALID_LANGUAGES.keys():
@@ -117,11 +114,11 @@ class Run:
     def prepare_files(self, in_encoded, code_encoded):
         # creating input file with right extension
         if not self._input_less:
-            with open(self.in_filename, "w+") as in_file:
+            with open(self.run_folder + '/' + self.in_filename, "w+") as in_file:
                 in_file.write(decode(in_encoded).decode('utf-8'))
 
         # creating code file
-        with open(self.code_filename, "w+") as code_file:
+        with open(self.run_folder + '/' + self.code_filename, "w+") as code_file:
             code_file.write(decode(code_encoded).decode('utf-8'))
 
     ### DOCKER SETUP RUN AND RETRIEVING DATA
@@ -141,8 +138,13 @@ class Run:
 
     def run_docker(self):
         self._start_time = datetime.datetime.utcnow()
+        logging.info("docker workdir: {}".format(os.getcwd()))
+        logging.info("docker run dir: {}".format(os.listdir(os.path.join(os.getcwd(), self.run_folder))))
+
+        logging.info(os.listdir(self.run_folder))
+
         self._container = self._client.containers.run(image=self._image, command=self._run_cmd,
-                                                      volumes={self.run_folder: {'bind': '/code/', 'mode': 'rw'}},
+                                                      volumes={os.path.join(os.getcwd(), self.run_folder): {'bind': '/code/', 'mode': 'rw'}},
                                                       stdout=True, stderr=True, detach=True)
 
         logging.info("Running a new container ! ID: {}".format(self._container.id))
@@ -153,18 +155,19 @@ class Run:
         # retrieving stderr and stdout
 
         logging.info(os.getcwd())
+        os.chdir(self.run_folder)
         out = self._container.logs(stdout=True, stderr=False).decode()
         err = self._container.logs(stdout=False, stderr=True).decode()
 
-        try:
+        artifact = None
+        if os.path.exists(self.out_filename):
             with open(self.out_filename, "r") as file:
                 artifact = file.read()
-        except FileNotFoundError:
-            artifact = None
 
         # out = encode(bytes(out, encoding='utf-8'))
         # err = encode(bytes(err, encoding='utf-8'))
         # artifact = encode(bytes(artifact, encoding='utf-8'))
+
         code_size = os.stat(self.code_filename).st_size
         in_size, out_size = None, None
         if os.path.exists(self.in_filename):
@@ -175,23 +178,21 @@ class Run:
 
         stats = {'duration': self._end_time - self._start_time,
                  'code_size': code_size, 'in_size': in_size, 'out_size': out_size}
-
         logging.info(stats)
         self.response = {'run_id': self.run_id, 'stdout': out,
                          'stderr': err, 'artifact': artifact, 'stats': str(stats)}
+        logging.info(self.response)
         os.chdir('..')
-        # logging.debug(self.response)
 
     ### KAFKA RESPONSE
     def send_response(self):
-        self.WrappedProducer.producer.send('runner-output', self.response)
-
-    def clean_host_files(self):
-        logging.warning("cleaning files on host machine !")
-        logging.warning(os.listdir(self.run_folder))
-        os.chdir(self.base_folder)
         try:
-            shutil.rmtree(self.run_folder, ignore_errors=True)
+            self.WrappedProducer.producer.send('runner-output', self.response)
         except Exception as e:
-            logging.error("clean_host_files: {}".format(e))
+            logging.error(e)
+    def clean_host_files(self):
+        logging.info("DELETING HOST MACHINE FILES")
+        logging.info(os.listdir('.'))
+        shutil.rmtree(self.run_folder, ignore_errors=True)
+        logging.info(os.listdir('.'))
 
