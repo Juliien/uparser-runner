@@ -204,10 +204,7 @@ class Run:
 
     ### KAFKA RESPONSE
     def send_response(self):
-        try:
-            self.WrappedProducer.producer.send('runner-output', self.response)
-        except Exception as e:
-            logging.error(e)
+        self.WrappedProducer.producer.send('runner-output', self.response)
 
     def clean_host_files(self):
         logging.info("DELETING HOST MACHINE FILES")
