@@ -1,8 +1,8 @@
 MULTITHREADING                                  TODO
-TIMEOUT PROTECTION:                             DONE
-STATS (tmedelte / files sizes)                  DONE
-COMPILED LANGAGE:                               TODO
-DEPLOYEMENT                                     WIP
+TIMEOUT PROTECTION:                             WIP
+STATS (timedelta / files sizes)                 DONE
+COMPILED LANGUAGE:                              TODO
+DEPLOYMENT                                      WIP
 BETTER ERROR HANDLING                           WIP
 E2E TESTING WITH EXTREME INPUTS                 WIP
 CLEANING_AGENT TO REMOVE POTENTIALS LEFTOVERS   DONE

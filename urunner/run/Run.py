@@ -1,8 +1,5 @@
 import datetime
 import multiprocessing
-import sys
-import time
-
 import logging
 import os
 import docker
@@ -19,7 +16,7 @@ class Run:
     VALID_LANGUAGES = {'python': {'ext': '.py', 'image': 'urunner:python3.8', 'bin': 'python3', 'compiled': False},
                        'c': {'ext': '.c', 'image': 'urunner:c', 'bin': './a.out', 'compiler': 'gcc', 'compiled': True}
                        # insert new languages here
-                      }
+                       }
 
     DUMMY_OUT_FILE_EXT = ".dummy"
     TMP_RUN_DIR = "./tmp/"
@@ -75,9 +72,8 @@ class Run:
         # DOCKER: setup, create and log
         self.setup_docker()
         p = multiprocessing.Process(target=self.run_docker())
-        p.start()
-        p.join(1)
 
+        p.join(timeout=5)
         if p.is_alive():
             logging.warning("RUN {} timeout !".format(self.run_id))
             p.terminate()
@@ -157,7 +153,7 @@ class Run:
 
         self._container = self._client.containers.run(image=self._image, command=self._run_cmd,
                                                       volumes={os.path.join(os.getcwd(), self.run_folder): {'bind': '/code/', 'mode': 'rw'}},
-                                                      stdout=True, stderr=True, detach=True)
+                                                      stdout=True, stderr=True, detach=True, )
 
         logging.info("Running a new container ! ID: {}".format(self._container.id))
         self._container.wait()
