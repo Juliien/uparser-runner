@@ -95,6 +95,8 @@ class Run:
             os.chdir(self.run_folder)
         except Exception as e:
             logging.error(e)
+        logging.info(os.listdir('.'))
+        logging.info(os.listdir('..'))
 
     def setup_extensions(self, language, in_ext, out_ext):
         if language in self.VALID_LANGUAGES.keys():
@@ -149,6 +151,8 @@ class Run:
 
     def retrieve_logs_and_artifact(self):
         # retrieving stderr and stdout
+
+        logging.info(os.getcwd())
         out = self._container.logs(stdout=True, stderr=False).decode()
         err = self._container.logs(stdout=False, stderr=True).decode()
 
@@ -161,13 +165,13 @@ class Run:
         # out = encode(bytes(out, encoding='utf-8'))
         # err = encode(bytes(err, encoding='utf-8'))
         # artifact = encode(bytes(artifact, encoding='utf-8'))
-        code_size = os.stat(self.run_folder + '/' + self.code_filename).st_size
+        code_size = os.stat(self.code_filename).st_size
         in_size, out_size = None, None
-        if os.path.exists(self.run_folder + '/' + self.in_filename):
-            in_size = os.stat(self.run_folder + '/' + self.in_filename).st_size
+        if os.path.exists(self.in_filename):
+            in_size = os.stat(self.in_filename).st_size
 
-        if os.path.exists(self.run_folder + '/' + self.out_filename):
-            out_size = os.stat(self.run_folder + '/' + self.out_filename).st_size
+        if os.path.exists(self.out_filename):
+            out_size = os.stat(self.out_filename).st_size
 
         stats = {'duration': self._end_time - self._start_time,
                  'code_size': code_size, 'in_size': in_size, 'out_size': out_size}
@@ -175,7 +179,7 @@ class Run:
         logging.info(stats)
         self.response = {'run_id': self.run_id, 'stdout': out,
                          'stderr': err, 'artifact': artifact, 'stats': str(stats)}
-
+        os.chdir('..')
         # logging.debug(self.response)
 
     ### KAFKA RESPONSE

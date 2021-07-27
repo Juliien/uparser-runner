@@ -2,7 +2,7 @@ import json
 import logging
 
 from kafka import KafkaConsumer, KafkaProducer
-from config.kafka_config import cfg
+from urunner.config.kafka_config import cfg
 
 class Consumer:
     def __init__(self, logger=None):
