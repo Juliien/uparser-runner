@@ -38,7 +38,7 @@ def test_python_e2e(prod):
     prod.producer.send(INPUT_TOPIC, test_real).get()
 
 
-#@pytest.mark.skip("json to csv")
+@pytest.mark.skip("json to csv")
 def test_json_to_csv(prod):
     test_csv = {"id": "1",
                 "inputfile": "ew0KICAgICJlbWFpbCI6ICJqdWxpZW5AZ21haWwuY29tIiwNCiAgICAicGFzc3dvcmQiOiAidGVzdCIsDQogICAgIm5hbWUiOiAidG90byIsDQogICAgImFtZGluIjogdHJ1ZQ0KfQ==",
@@ -48,7 +48,7 @@ def test_json_to_csv(prod):
     prod.producer.send(INPUT_TOPIC, test_csv).get()
 
 
-@pytest.mark.skip("infinite loop")
+#@pytest.mark.skip("infinite loop")
 def test_timeout_protection(prod):
     test_timeout = {"id": "1", "inputfile": "",
                     "algorithm": "aW1wb3J0IHRpbWUKCndoaWxlIDE6CiAgICBwcmludCgibG9sIikKICAgIHRpbWUuc2xlZXAoMSkg",
