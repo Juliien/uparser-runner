@@ -9,7 +9,6 @@ def prod():
     return Producer()
 
 
-@pytest.mark.skip("")
 def test_python_hello_world(prod):
     test_hello_world = {'id': '1234', 'from': 'json', 'to': 'csv', 'inputfile': 'eyAnaGVsbG8nOiAnd29ybGQnfQ==',
                         'algorithm': 'cHJpbnQoImhlbGxvIHdvcmxkISIp', 'language': 'python'}
@@ -17,7 +16,6 @@ def test_python_hello_world(prod):
     prod.producer.send(INPUT_TOPIC, test_hello_world).get()
 
 
-@pytest.mark.skip("")
 def test_python_file(prod):
     tmp_algo = "d2l0aCBvcGVuKCJvdXQuanNvbiIsICJ3KyIpIGFzIGZpbGU6CiAgICBmaWxlLndyaXRlKCJEVU1NWSBGSUxFIEZPUiBGSUxFIFJFVFJJRVZFIFRFU1QiKQo= "
 
@@ -27,7 +25,6 @@ def test_python_file(prod):
     prod.producer.send(INPUT_TOPIC, test_file_generation).get()
 
 
-@pytest.mark.skip("")
 def test_python_e2e(prod):
     test_real = {'id': '2838f3e8-61e7-49a0-84dc-7f2892193ff8',
                  'inputfile': 'bm9tDQpkYSBjb3J0ZQ0KZHVwb250DQpkdXByZXQNCg==',
@@ -38,7 +35,6 @@ def test_python_e2e(prod):
     prod.producer.send(INPUT_TOPIC, test_real).get()
 
 
-@pytest.mark.skip("json to csv")
 def test_json_to_csv(prod):
     test_csv = {"id": "1",
                 "inputfile": "ew0KICAgICJlbWFpbCI6ICJqdWxpZW5AZ21haWwuY29tIiwNCiAgICAicGFzc3dvcmQiOiAidGVzdCIsDQogICAgIm5hbWUiOiAidG90byIsDQogICAgImFtZGluIjogdHJ1ZQ0KfQ==",
@@ -48,7 +44,7 @@ def test_json_to_csv(prod):
     prod.producer.send(INPUT_TOPIC, test_csv).get()
 
 
-#@pytest.mark.skip("infinite loop")
+@pytest.mark.skip("infinite loop")
 def test_timeout_protection(prod):
     test_timeout = {"id": "1", "inputfile": "",
                     "algorithm": "aW1wb3J0IHRpbWUKCndoaWxlIDE6CiAgICBwcmludCgibG9sIikKICAgIHRpbWUuc2xlZXAoMSkg",

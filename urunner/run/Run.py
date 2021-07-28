@@ -10,8 +10,12 @@ from kafka_wrapper import Producer
 from tools import decode
 
 
-def log_color(string):
+def log_cyan(string):
     logging.info('\033[96m' + str(string) + '\033[0m')
+
+
+def log_red(string):
+    logging.info('\033[91m' + str(string) + '\033[0m')
 
 
 # TIMEOUT PROTECTION
@@ -23,7 +27,7 @@ TIMEOUT = False
 
 
 def alarm_handler(signum, frame):
-    log_color("RUN TIMEOUTED ! HARAKIRI!")
+    log_cyan("RUN TIMEOUTED ! HARAKIRI!")
     TIMEOUT = True
     raise TimeOutException()
 
@@ -35,7 +39,6 @@ class Run:
                        }
 
     DUMMY_OUT_FILE_EXT = ".dummy"
-    TMP_RUN_DIR = "./tmp/"
     base_folder = ""
 
     _image = ""
@@ -64,8 +67,8 @@ class Run:
     timeout = False
 
     def __init__(self, run_id, src, dest, inputfile, algorithm, language):
-        log_color("------------------------------------ START RUN {} ------------------------------------".format(run_id))
-        log_color("run id: {}, src: {}, dest: {}, lang: {}".format(
+        log_cyan("------------------------------------ START RUN {} ------------------------------------".format(run_id))
+        log_cyan("run id: {}, src: {}, dest: {}, lang: {}".format(
             run_id, src, dest, language))
 
         # basic configuration
@@ -102,14 +105,16 @@ class Run:
         except TimeOutException as e:
             logging.error(e)
             # run is KO, we build dummy response with error
-            self.response = Run.build_response(run_id=run_id, stdout="urunner: TIMEOUT ERROR\n",
+            self.response = Run.build_response(run_id=self.run_id, stdout="urunner: TIMEOUT ERROR\n",
                                                stderr="urunner: TIMEOUT ERROR\n",
                                                artifact=None, stats=None)
+
+        log_red("Run ID: {} ENDED! Response: {}".format(self.run_id, self.response))
 
     def __del__(self):
         self.send_response()  # anyways, send the response back to kafka
         self.clean_host_files()  # delete the run_id folder at the end of run
-        log_color("------------------------------------- END RUN {} -------------------------------------".format(self.run_id))
+        log_cyan("------------------------------------- END RUN {} -------------------------------------".format(self.run_id))
 
     # BUILDING KAFKA RESPONSE AND RESPONSE ERROR PRESET
     @staticmethod
@@ -120,7 +125,6 @@ class Run:
                     'artifact': artifact,
                     'stats': stats}
 
-        logging.info("{} response : {}".format(run_id, response))
         return response
 
     ### FILE SETUP ###
@@ -152,7 +156,7 @@ class Run:
 
     def prepare_files(self, code_encoded, in_encoded=""):
         # creating input file with right extension
-        log_color(os.listdir('.'))
+        log_cyan(os.listdir('.'))
         if not self._input_less:
             with open(os.path.join(self.run_folder, self.in_filename), "a+") as in_file:
                 in_file.write(decode(in_encoded).decode('utf-8'))
@@ -179,14 +183,16 @@ class Run:
     def run_docker(self):
         # running docker, getting start time and end time, and waiting for completion
         self._start_time = datetime.datetime.utcnow()
-        logging.info("docker workdir: {}".format(os.getcwd()))
+
         logging.info("docker run dir content: {}".format(os.listdir(os.path.join(os.getcwd(), self.run_folder))))
 
-        self._container = self._client.containers.run(image=self._image, command=self._run_cmd,
-                                                      volumes={os.path.join(os.getcwd(), self.run_folder): {'bind': '/code/', 'mode': 'rw'}},
+        log_cyan(os.getcwd())
+        docker_shared_folder = os.path.join(os.getcwd(), self.run_folder)
+        logging.info(docker_shared_folder)
+        self._container = self._client.containers.run(volumes={docker_shared_folder: {'bind': '/code/', 'mode': 'rw'}},
+                                                      image=self._image, command=self._run_cmd,
                                                       stdout=True, stderr=True, detach=True)
-
-        log_color("Running a new container ! ID: {}".format(self._container.id))
+        log_cyan("Running a new container ! ID: {}".format(self._container.id))
         self._container.wait()
         self._end_time = datetime.datetime.utcnow()
 
@@ -226,6 +232,6 @@ class Run:
         self.WrappedProducer.producer.send('runner-output', self.response)
 
     def clean_host_files(self):
-        logging.info("DELETING HOST MACHINE FILES")
+        logging.info('rm {}'.format(self.run_folder))
         shutil.rmtree(self.run_folder, ignore_errors=True)
         assert self.run_id not in os.listdir('.'), "Left over folder in URUNNER {}!!!.".format(self.run_id)
