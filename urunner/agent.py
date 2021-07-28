@@ -1,8 +1,5 @@
-import os
 import time
 import logging
-
-import requests.exceptions
 
 from kafka_wrapper import Consumer
 from run.Run import Run
@@ -25,24 +22,25 @@ class Urunner(metaclass=Singleton):
         self.parametrize_logging()
 
         # settings kafka wrapper
-        self.WrappedConsumer = Consumer()  # logger=self.Logger)
+        self.WrappedConsumer = Consumer()
 
-        # if not os.path.exists("./tmp/"):
-        #     os.mkdir("./tmp/")
-        # listening kafka input
         try:
+            # for each messages in topic, start a run, and delete it right afterwards
+            # maybe we could use a context with
             for k in self.WrappedConsumer.consumer:
                 self.run = Run(run_id=k.value['id'], src=k.value['from'], dest=k.value['to'], inputfile=k.value['inputfile'],
                                algorithm=k.value['algorithm'], language=k.value['language'])
                 del self.run
                 time.sleep(1)
-        except KeyboardInterrupt:
+        except KeyboardInterrupt:  # exit kafka properly
             logging.warning("Keyboard Interrupt !")
 
     @staticmethod
     def parametrize_logging():
+        # logging format with level info, time, filename, funcname, line number, and name and logging message
         log_format = '\033[95m[%(levelname)-8s][%(asctime)s][%(filename)s][%(funcName)s][%(lineno)s]:\033[0m %(name)s : %(message)s'
-        logging.basicConfig(datefmt='%H:%M:%S', level=logging.DEBUG,   format=log_format, stream=sys.stdout)
+        # config for time, and level setting, format, and tee to stdout
+        logging.basicConfig(datefmt='%H:%M:%S', level=logging.DEBUG, format=log_format, stream=sys.stdout)
         logging.info('Urunner Logging Initialization')
 
     def __del__(self):
