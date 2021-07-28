@@ -2,6 +2,8 @@ import os
 import time
 import logging
 
+import requests.exceptions
+
 from kafka_wrapper import Consumer
 from run.Run import Run
 import sys
@@ -30,9 +32,13 @@ class Urunner(metaclass=Singleton):
         # listening kafka input
         try:
             for k in self.WrappedConsumer.consumer:
-                self.run = Run(run_id=k.value['id'], src=k.value['from'], dest=k.value['to'], inputfile=k.value['inputfile'],
-                               algorithm=k.value['algorithm'], language=k.value['language'])
-                time.sleep(2)
+                try:
+                    self.run = Run(run_id=k.value['id'], src=k.value['from'], dest=k.value['to'], inputfile=k.value['inputfile'],
+                                   algorithm=k.value['algorithm'], language=k.value['language'])
+                    time.sleep(2)
+                except Exception as e:
+                    Run.unexpected_error_response(k.value['id'], e)
+
         except KeyboardInterrupt:
             logging.warning("Keyboard Interrupt !")
 

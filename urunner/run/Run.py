@@ -88,6 +88,26 @@ class Run:
     def __del__(self):
         logging.info("------------------------------------- END RUN {} -------------------------------------".format(self.run_id))
 
+    # BUILDING KAFKA RESPONSE AND REPONSE ERROR PRESET
+    @staticmethod
+    def build_response(run_id, stdout, stderr, artifact, stats):
+        response = {'run_id': run_id,
+                    'stdout': stdout,
+                    'stderr': stderr,
+                    'artifact': artifact,
+                    'stats': stats}
+
+        logging.info("{} response : {}".format(run_id, response))
+        return response
+
+    @staticmethod
+    def unexpected_error_response(run_id, error_msg):
+        logging.error(error_msg)
+        prod = Producer()
+        response = Run.build_response(run_id=run_id, stdout="UNEXPECTED ERROR\n", stderr="UNEXPECTED ERROR\n",
+                                      artifact=None, stats=None)
+        prod.producer.send('runner-output', response)
+
     ### FILE SETUP ###
     def create_run_folder_and_dive(self):
         # creating a folder with the id of the run
@@ -191,10 +211,8 @@ class Run:
                  'code_size': code_size, 'in_size': in_size, 'out_size': out_size}
         logging.info(stats)
 
-        self.response = {'run_id': self.run_id, 'stdout': out,
-                         'stderr': err, 'artifact': artifact, 'stats': stats}
-        if self.timeout:
-            self.response = {'run_id': self.run_id, 'stdout': '', 'stderr': "TIMEOUT", artifact: "", 'stats': {}}
+        self.response = Run.build_response(run_id=self.run_id, stdout=out, stderr=err, artifact=artifact, stats=stats)
+
         logging.info(self.response)
         os.chdir('..')
 
