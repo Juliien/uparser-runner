@@ -181,7 +181,7 @@ class Run:
 
         self._container = self._client.containers.run(image=self._image, command=self._run_cmd,
                                                       volumes={os.path.join(os.getcwd(), self.run_folder): {'bind': '/code/', 'mode': 'rw'}},
-                                                      stdout=True, stderr=True, detach=True, )
+                                                      stdout=True, stderr=True, detach=True)
 
         log_color("Running a new container ! ID: {}".format(self._container.id))
         self._container.wait()
