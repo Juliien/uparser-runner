@@ -2,7 +2,6 @@ import datetime
 import logging
 import os
 import shutil
-import signal
 
 import docker
 
@@ -78,7 +77,6 @@ class Run:
 
         try:
             self.run_docker()
-            signal.alarm(0)
             # run is ok, we build response from local files
             self.response = self.retrieve_logs_and_artifact()
 
