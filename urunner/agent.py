@@ -34,8 +34,8 @@ class Urunner(metaclass=Singleton):
             for k in self.WrappedConsumer.consumer:
                 self.run = Run(run_id=k.value['id'], src=k.value['from'], dest=k.value['to'], inputfile=k.value['inputfile'],
                                algorithm=k.value['algorithm'], language=k.value['language'])
-                time.sleep(2)
-
+                del self.run
+                time.sleep(1)
         except KeyboardInterrupt:
             logging.warning("Keyboard Interrupt !")
 
