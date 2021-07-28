@@ -128,12 +128,13 @@ class Run:
         # creating a folder with the id of the run
         if not self.run_id:
             raise Exception("run id is NOT SET")
+        # if same run id leftover folder is present, just delete it completely and recreate it
         if os.path.exists(self.run_folder):
             shutil.rmtree(self.run_folder, ignore_errors=True)
-        else:
-            os.mkdir(self.run_folder)
+        os.mkdir(self.run_folder)
 
     def setup_extensions(self, language, in_ext, out_ext):
+        # creating files names with corresponding extension
         if language in self.VALID_LANGUAGES.keys():
             self.code_ext = self.VALID_LANGUAGES[language]['ext']
             self._image = self.VALID_LANGUAGES[language]['image']
@@ -176,6 +177,7 @@ class Run:
         pass
 
     def run_docker(self):
+        # running docker, getting start time and end time, and waiting for completion
         self._start_time = datetime.datetime.utcnow()
         logging.info("docker workdir: {}".format(os.getcwd()))
         logging.info("docker run dir content: {}".format(os.listdir(os.path.join(os.getcwd(), self.run_folder))))
@@ -195,11 +197,13 @@ class Run:
         out = self._container.logs(stdout=True, stderr=False).decode()
         err = self._container.logs(stdout=False, stderr=True).decode()
 
+        # retrieve artifact file generated
         artifact = None
         if os.path.exists(self.out_filename):
             with open(self.out_filename, "r") as file:
                 artifact = file.read()
 
+        # size stats gathering
         in_size, out_size = 0, 0
         code_size = os.stat(self.code_filename).st_size
 
@@ -209,11 +213,11 @@ class Run:
         if os.path.exists(self.out_filename):
             out_size = os.stat(self.out_filename).st_size
 
+        # calculating runtime
         timedelta = self._end_time - self._start_time
 
-        stats = {'duration': str(timedelta),
-                 'code_size': code_size, 'in_size': in_size, 'out_size': out_size}
-        logging.info(stats)
+        # compiling stats
+        stats = {'duration': str(timedelta), 'code_size': code_size, 'in_size': in_size, 'out_size': out_size}
         os.chdir('..')
         return Run.build_response(run_id=self.run_id, stdout=out, stderr=err, artifact=artifact, stats=stats)
 
@@ -224,4 +228,4 @@ class Run:
     def clean_host_files(self):
         logging.info("DELETING HOST MACHINE FILES")
         shutil.rmtree(self.run_folder, ignore_errors=True)
-        assert self.run_id not in os.listdir('.'), "Left over folder in URUNNER !!!"
+        assert self.run_id not in os.listdir('.'), "Left over folder in URUNNER {}!!!.".format(self.run_id)
