@@ -41,9 +41,8 @@ class Urunner(metaclass=Singleton):
 
     @staticmethod
     def parametrize_logging():
-        log_format = '%(asctime)s : %(levelname)s : %(name)s : %(message)s'
-
-        logging.basicConfig(datefmt='%m/%d/%Y, %H:%M:%S', level=logging.DEBUG,   format=log_format, stream=sys.stdout)
+        log_format = '\033[95m[%(levelname)-8s][%(asctime)s][%(filename)s][%(funcName)s][%(lineno)s]:\033[0m %(name)s : %(message)s'
+        logging.basicConfig(datefmt='%H:%M:%S', level=logging.DEBUG,   format=log_format, stream=sys.stdout)
         logging.info('Urunner Logging Initialization')
 
     def __del__(self):
