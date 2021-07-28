@@ -4,6 +4,7 @@ import os
 import shutil
 
 import docker
+import requests.exceptions
 
 from kafka_wrapper import Producer
 from tools import decode
@@ -80,8 +81,9 @@ class Run:
             # run is ok, we build response from local files
             self.response = self.retrieve_logs_and_artifact()
 
-        except Exception as e:
+        except requests.exceptions.HTTPError as e:
             # run is KO, we build dummy response with error
+            logging.error(e)
             self.response = Run.build_response(run_id=run_id, stdout="urunner: TIMEOUT ERROR\n",
                                                stderr="urunner: TIMEOUT ERROR\n",
                                                artifact=None, stats=None)
