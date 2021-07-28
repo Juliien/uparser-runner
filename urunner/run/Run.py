@@ -100,6 +100,7 @@ class Run:
                 self.response = self.retrieve_logs_and_artifact()
 
         except TimeOutException as e:
+            logging.error(e)
             # run is KO, we build dummy response with error
             self.response = Run.build_response(run_id=run_id, stdout="urunner: TIMEOUT ERROR\n",
                                                stderr="urunner: TIMEOUT ERROR\n",
