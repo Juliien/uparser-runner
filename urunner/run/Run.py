@@ -170,8 +170,8 @@ class Run:
         # running docker with container Object (can attach)
         self._client = docker.client.from_env()
 
-    def build_compiled_image(self):
-        print("compile here !")
+    @staticmethod
+    def build_compiled_image():
         pass
 
     def run_docker(self):
