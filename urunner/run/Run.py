@@ -14,20 +14,6 @@ def log_color(string):
     logging.info('\033[96m' + str(string) + '\033[0m')
 
 
-# TIMEOUT PROTECTION
-class TimeOutException(Exception):
-    pass
-
-
-TIMEOUT = False
-
-
-def alarm_handler(signum, frame):
-    log_color("RUN TIMEOUTED ! HARAKIRI!")
-    TIMEOUT = True
-    raise TimeOutException()
-
-
 class Run:
     VALID_LANGUAGES = {'python': {'ext': '.py', 'image': 'urunner:python3.8', 'bin': 'python3', 'compiled': False},
                        'c': {'ext': '.c', 'image': 'urunner:c', 'bin': './a.out', 'compiler': 'gcc', 'compiled': True}
@@ -91,15 +77,12 @@ class Run:
         self.setup_docker()
 
         try:
-            signal.signal(signal.SIGALRM, alarm_handler)
-            signal.alarm(10)
             self.run_docker()
             signal.alarm(0)
             # run is ok, we build response from local files
-            if not TIMEOUT:
-                self.response = self.retrieve_logs_and_artifact()
+            self.response = self.retrieve_logs_and_artifact()
 
-        except TimeOutException as e:
+        except Exception as e:
             # run is KO, we build dummy response with error
             self.response = Run.build_response(run_id=run_id, stdout="urunner: TIMEOUT ERROR\n",
                                                stderr="urunner: TIMEOUT ERROR\n",
