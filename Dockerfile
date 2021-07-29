@@ -3,7 +3,7 @@ FROM ubuntu:20.04
 WORKDIR /agent
 
 # python requirements
-RUN apt-get update && apt-get install --no-install-recommends -y python3.8 python3-pip python3.8-dev
+RUN apt-get update && apt-get install --no-install-recommends -y python3.8 python3-pip python3.8-dev python3-pip
 COPY . .
 RUN python3 -m pip install -r requirements.txt
 
